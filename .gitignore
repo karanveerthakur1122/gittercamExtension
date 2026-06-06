@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+*.zip
+.DS_Store
+.cursor/
+.cursorrules
+mcps/
+agent-transcripts/

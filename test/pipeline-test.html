@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GitterCam Pipeline Test</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #14151a;
+        color: #e7e9ee;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+      }
+      h1 {
+        font-size: 18px;
+        background: linear-gradient(90deg, #5b8cff, #8a6bff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .stage {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      figure {
+        margin: 0;
+        text-align: center;
+      }
+      video {
+        width: 360px;
+        max-width: 90vw;
+        border-radius: 12px;
+        background: #000;
+        border: 1px solid #262833;
+      }
+      figcaption {
+        font-size: 12px;
+        color: #8a8f9c;
+        margin-top: 6px;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      button {
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid #262833;
+        background: #1b1d25;
+        color: #e7e9ee;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      button.active {
+        border-color: #5b8cff;
+        background: #20243a;
+      }
+      .loop {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        color: #b7bcc9;
+      }
+      .note {
+        font-size: 12px;
+        color: #8a8f9c;
+        max-width: 520px;
+        text-align: center;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>GitterCam Pipeline Test</h1>
+    <p class="note">
+      Standalone harness for the canvas engine. Click <b>Start camera</b>, then
+      switch modes. The right video is the manipulated stream Meet would receive.
+      This page does not require the extension to be installed.
+    </p>
+
+    <div class="controls">
+      <button id="start">Start camera</button>
+    </div>
+
+    <div class="stage">
+      <figure>
+        <video id="real" autoplay playsinline muted></video>
+        <figcaption>Real camera</figcaption>
+      </figure>
+      <figure>
+        <video id="out" autoplay playsinline muted></video>
+        <figcaption>GitterCam output</figcaption>
+      </figure>
+    </div>
+
+    <div class="controls" id="modes" hidden>
+      <button data-mode="normal" class="active">Live</button>
+      <button data-mode="freeze">Freeze</button>
+      <button data-mode="loop">Loop</button>
+      <button data-mode="stutter">Bad Connection</button>
+      <span class="loop">
+        Loop length:
+        <button data-loop="3">3s</button>
+        <button data-loop="5" class="active">5s</button>
+        <button data-loop="10">10s</button>
+      </span>
+    </div>
+
+    <div class="controls" id="audio" hidden>
+      <button data-audio="normal" class="active">Audio: Normal</button>
+      <button data-audio="muted-ambient">Mute + Ambient</button>
+      <button data-audio="voice-changed">Voice</button>
+      <button data-audio="typing">Typing</button>
+      <span class="loop" id="voices" hidden>
+        Voice:
+        <button data-voice="deep" class="active">Deep</button>
+        <button data-voice="high">High</button>
+        <button data-voice="robot">Robot</button>
+        <button data-voice="echo">Echo</button>
+        <button data-voice="whisper">Whisper</button>
+        <button data-voice="chipmunk">Chipmunk</button>
+      </span>
+    </div>
+    <p class="note">
+      Audio output plays through the "GitterCam output" video element (unmute it
+      to hear). Use headphones to avoid feedback.
+    </p>
+
+    <!-- Load the real pipeline modules under test. -->
+    <script src="../src/content/pipeline.js"></script>
+    <script src="../src/content/audio-pipeline.js"></script>
+    <script>
+      const startBtn = document.getElementById('start');
+      const realVideo = document.getElementById('real');
+      const outVideo = document.getElementById('out');
+      const modes = document.getElementById('modes');
+      const audio = document.getElementById('audio');
+      const voices = document.getElementById('voices');
+
+      startBtn.addEventListener('click', async () => {
+        startBtn.disabled = true;
+        try {
+          const real = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: true
+          });
+          realVideo.srcObject = real;
+
+          const pipeline = window.__gittercamPipeline;
+          const audioMgr = window.__gittercamAudio;
+          audioMgr.setSampleUrls({
+            typing: [
+              '../public/audio/typing-1.wav',
+              '../public/audio/typing-2.wav',
+              '../public/audio/typing-3.wav'
+            ],
+            mouse: '../public/audio/mouse-click.wav'
+          });
+
+          const videoOut = await pipeline.intercept(real);
+          const audioOut = await audioMgr.interceptAudio(real);
+          const out = new MediaStream([
+            ...videoOut.getVideoTracks(),
+            ...(audioOut ? audioOut.getAudioTracks() : [])
+          ]);
+          outVideo.srcObject = out;
+          outVideo.muted = false; // let the user hear processed audio
+          modes.hidden = false;
+          audio.hidden = false;
+        } catch (err) {
+          alert('Camera/mic error: ' + err.message);
+          startBtn.disabled = false;
+        }
+      });
+
+      audio.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const audioMgr = window.__gittercamAudio;
+
+        if (btn.dataset.audio) {
+          audioMgr.setAudioMode(btn.dataset.audio);
+          audio
+            .querySelectorAll('button[data-audio]')
+            .forEach((b) => b.classList.toggle('active', b === btn));
+          voices.hidden = btn.dataset.audio !== 'voice-changed';
+        }
+        if (btn.dataset.voice) {
+          audioMgr.setVoicePreset(btn.dataset.voice);
+          voices
+            .querySelectorAll('button[data-voice]')
+            .forEach((b) => b.classList.toggle('active', b === btn));
+        }
+      });
+
+      modes.addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const pipeline = window.__gittercamPipeline;
+
+        if (btn.dataset.mode) {
+          pipeline.setMode(btn.dataset.mode);
+          modes
+            .querySelectorAll('button[data-mode]')
+            .forEach((b) => b.classList.toggle('active', b === btn));
+        }
+        if (btn.dataset.loop) {
+          pipeline.setLoopSeconds(Number(btn.dataset.loop));
+          modes
+            .querySelectorAll('button[data-loop]')
+            .forEach((b) => b.classList.toggle('active', b === btn));
+        }
+      });
+    </script>
+  </body>
+</html>
