@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitterCam - Webcam Control for Video Calls</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0b0f;
+      --surface: #14151a;
+      --surface-2: #1b1d25;
+      --border: #262833;
+      --text: #e7e9ee;
+      --text-dim: #8a8f9c;
+      --accent: #5b8cff;
+      --accent-2: #8a6bff;
+      --danger: #ff9aa6;
+      --success: #54d18c;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Nav */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 16px 0;
+      background: rgba(10, 11, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-brand {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .nav-links { display: flex; gap: 28px; align-items: center; }
+    .nav-links a { color: var(--text-dim); font-size: 14px; font-weight: 500; }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .btn:hover { transform: translateY(-1px); text-decoration: none; }
+    .btn:active { transform: translateY(0); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(91, 140, 255, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* Hero */
+    .hero {
+      padding: 160px 0 100px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(91, 140, 255, 0.08), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 20px;
+      line-height: 1.1;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 36px;
+    }
+
+    .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    .badge-row {
+      margin-top: 48px;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+
+    /* Features */
+    .section { padding: 100px 0; }
+    .section-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .section-desc {
+      font-size: 16px;
+      color: var(--text-dim);
+      max-width: 520px;
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-card {
+      padding: 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--surface-2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+    .feature-card p { font-size: 14px; color: var(--text-dim); line-height: 1.5; }
+
+    /* Modes */
+    .modes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 32px;
+    }
+
+    .modes-table th, .modes-table td {
+      padding: 14px 18px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .modes-table th {
+      color: var(--text-dim);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .modes-table td:first-child { font-weight: 600; }
+
+    .kbd {
+      display: inline-block;
+      padding: 2px 8px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--accent);
+    }
+
+    /* How it works */
+    .diagram {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 32px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      color: var(--text-dim);
+      overflow-x: auto;
+      line-height: 1.8;
+    }
+
+    .diagram .highlight { color: var(--accent); font-weight: 600; }
+
+    /* Platforms */
+    .platforms-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 32px;
+    }
+
+    .platform-card {
+      padding: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .platform-card .platform-icon { font-size: 28px; margin-bottom: 8px; }
+
+    /* CTA */
+    .cta {
+      text-align: center;
+      padding: 80px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .cta h2 { font-size: 32px; font-weight: 700; margin-bottom: 16px; }
+    .cta p { color: var(--text-dim); margin-bottom: 32px; }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    footer p { font-size: 13px; color: var(--text-dim); }
+    footer a { color: var(--text-dim); }
+    footer a:hover { color: var(--text); }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    /* Animations */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      .hero { padding: 120px 0 60px; }
+      .section { padding: 60px 0; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container">
+      <span class="nav-brand">GitterCam</span>
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#modes">Modes</a>
+        <a href="#platforms">Platforms</a>
+        <a href="https://github.com/karanveerthakur1122/gittercamExtension" target="_blank" class="btn btn-secondary">GitHub</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="container">
+      <h1>Take control of your<br><span>webcam in meetings</span></h1>
+      <p>Freeze, loop, filter, or fake a bad connection on your webcam during video calls. Free, open-source, and works across all major platforms.</p>
+      <div class="hero-buttons">
+        <a href="https://github.com/karanveerthakur1122/gittercamExtension" target="_blank" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          Get from GitHub
+        </a>
+        <a href="#features" class="btn btn-secondary">Learn more</a>
+      </div>
+      <div class="badge-row">
+        <div class="badge"><span class="dot"></span> Open Source</div>
+        <div class="badge"><span class="dot"></span> Cross-Browser</div>
+        <div class="badge"><span class="dot"></span> No Account Needed</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="container">
+      <div class="fade-in">
+        <p class="section-label">Features</p>
+        <h2 class="section-title">Everything you need to manage your camera</h2>
+        <p class="section-desc">One extension replaces your webcam feed with effects the meeting app can't distinguish from a real camera.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x2744;</div>
+          <h3>Freeze Frame</h3>
+          <p>Hold the current frame and walk away. The meeting sees you sitting naturally.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x21BB;</div>
+          <h3>Loop Recording</h3>
+          <p>Record 3-10 seconds of yourself, then replay it on loop while you're gone.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x26A1;</div>
+          <h3>Bad Connection</h3>
+          <p>Simulate a laggy, stuttering feed. Buy yourself time without anyone suspecting.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x1F3A8;</div>
+          <h3>Color Filters</h3>
+          <p>Apply B&W, Sepia, Warm, Cool, or Vivid filters to your live camera feed.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x1F399;</div>
+          <h3>Audio Effects</h3>
+          <p>Voice changer, ambient room tone, or fake typing sounds mixed into your mic.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x23F0;</div>
+          <h3>Scheduled Freeze</h3>
+          <p>Set a timer to automatically freeze your camera after a delay, then resume.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x1F6E1;</div>
+          <h3>Screen Share Safe</h3>
+          <p>Effects auto-disable when you share your screen. The overlay hides too.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x1F6A8;</div>
+          <h3>Panic Button</h3>
+          <p>One key (Alt+P) instantly reverts everything to live camera and real mic.</p>
+        </div>
+        <div class="feature-card fade-in">
+          <div class="feature-icon">&#x1F4CC;</div>
+          <h3>Floating Overlay</h3>
+          <p>A draggable in-page widget to switch modes without opening the popup.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="modes">
+    <div class="container fade-in">
+      <p class="section-label">Modes & Shortcuts</p>
+      <h2 class="section-title">Quick access with keyboard shortcuts</h2>
+      <p class="section-desc">Switch between modes instantly with configurable hotkeys.</p>
+      <table class="modes-table">
+        <thead>
+          <tr><th>Mode</th><th>What it does</th><th>Shortcut</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Live</td><td>Normal pass-through camera feed</td><td><span class="kbd">Configurable</span></td></tr>
+          <tr><td>Freeze</td><td>Holds the current frame indefinitely</td><td><span class="kbd">Alt+F</span></td></tr>
+          <tr><td>Loop</td><td>Records and replays a short clip</td><td><span class="kbd">Alt+L</span></td></tr>
+          <tr><td>Bad Connection</td><td>Random stutters and frame drops</td><td><span class="kbd">Alt+S</span></td></tr>
+          <tr><td>Panic</td><td>Reverts camera + mic to live instantly</td><td><span class="kbd">Alt+P</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container fade-in">
+      <p class="section-label">Architecture</p>
+      <h2 class="section-title">How it works</h2>
+      <p class="section-desc">GitterCam intercepts the camera stream before the meeting app sees it.</p>
+      <div class="diagram">
+        <span class="highlight">Real Camera</span> &#x2192; getUserMedia patch (inject.js)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2193;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight">pipeline.js</span> &#x2014; canvas engine (freeze / loop / stutter / filters)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2193; canvas.captureStream()<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight">Meeting App</span> &#x2014; sees GitterCam output as the camera<br><br>
+        <span class="highlight">Real Mic</span> &#x2192; audio-pipeline.js (Web Audio graph)<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#x2193;<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="highlight">Meeting App</span> &#x2014; receives processed audio track
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="platforms">
+    <div class="container fade-in">
+      <p class="section-label">Compatibility</p>
+      <h2 class="section-title">Works where you meet</h2>
+      <p class="section-desc">Supports all major browser-based video call platforms.</p>
+      <div class="platforms-grid">
+        <div class="platform-card"><div class="platform-icon">&#x1F4F9;</div>Google Meet</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F4BB;</div>Zoom (Web)</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F4AC;</div>Microsoft Teams</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F4E2;</div>Slack Huddles</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F3AE;</div>Discord</div>
+      </div>
+      <div class="platforms-grid" style="margin-top: 14px;">
+        <div class="platform-card"><div class="platform-icon">&#x1F310;</div>Chrome</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F310;</div>Edge</div>
+        <div class="platform-card"><div class="platform-icon">&#x1F525;</div>Firefox</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <div class="container fade-in">
+      <h2>Ready to try GitterCam?</h2>
+      <p>Free, open source, no account required. Clone, build, and load in under a minute.</p>
+      <a href="https://github.com/karanveerthakur1122/gittercamExtension" target="_blank" class="btn btn-primary">
+        View on GitHub
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-links">
+        <a href="https://github.com/karanveerthakur1122/gittercamExtension" target="_blank">GitHub</a>
+        <a href="https://www.karanveerthakur.com.np" target="_blank">Creator</a>
+        <a href="mailto:karanveerthakur122@gmail.com">Contact</a>
+      </div>
+      <p>Built by <a href="https://www.karanveerthakur.com.np" target="_blank">Karan Veer Thakur</a> &middot; MIT License</p>
+    </div>
+  </footer>
+
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+    document.querySelectorAll('a[href^="#"]').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = document.querySelector(link.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
+      });
+    });
+  </script>
+
+</body>
+</html>
