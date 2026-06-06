@@ -1,8 +1,36 @@
 {
   "name": "gittercam",
   "version": "1.0.0",
-  "description": "Freeze, loop, or fake a bad connection on your webcam during Google Meet calls.",
+  "description": "Freeze, loop, filter, schedule, or fake a bad connection on your webcam during video calls. Cross-browser Manifest V3 extension.",
   "type": "module",
+  "license": "MIT",
+  "author": {
+    "name": "Karan Veer Thakur",
+    "email": "karanveerthakur122@gmail.com",
+    "url": "https://www.karanveerthakur.com.np"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/karanveerthakur1122/gittercamExtension.git"
+  },
+  "homepage": "https://github.com/karanveerthakur1122/gittercamExtension",
+  "bugs": {
+    "url": "https://github.com/karanveerthakur1122/gittercamExtension/issues"
+  },
+  "keywords": [
+    "browser-extension",
+    "webcam",
+    "google-meet",
+    "zoom",
+    "teams",
+    "discord",
+    "video-call",
+    "freeze-camera",
+    "manifest-v3",
+    "svelte",
+    "chrome-extension",
+    "firefox-addon"
+  ],
   "scripts": {
     "dev": "vite build --watch --mode development",
     "build": "node scripts/build.js chrome",
